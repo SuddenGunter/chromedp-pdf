@@ -7,8 +7,8 @@ import (
 	"log"
 )
 
-
 func main() {
+	log.Print("I am 1")
 	// create context
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
@@ -21,9 +21,15 @@ func main() {
 	}
 
 	// save the screenshot to disk
-	if err = ioutil.WriteFile("screenshot.png", buf, 0644); err != nil {
+	if err = ioutil.WriteFile("/store/screenshot.png", buf, 0644); err != nil {
 		log.Fatal(err)
 	}
+	files, err := ioutil.ReadDir("/store")
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Print(cap(files))
+	log.Print("I am 2")
 }
 
 func screenshot(urlstr, sel string, res *[]byte) chromedp.Tasks {
