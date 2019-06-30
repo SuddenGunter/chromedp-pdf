@@ -2,9 +2,10 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"github.com/SuddenGunter/pandaren/pkg/pdfstore"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"io/ioutil"
 	"log"
 )
 
@@ -21,16 +22,35 @@ func main() {
 		log.Fatal(err)
 	}
 
-	// save the screenshot to disk
-	if err = ioutil.WriteFile("/store/test.pdf", buf, 0666); err != nil {
-		log.Fatal(err)
-	}
-	files, err := ioutil.ReadDir("/store")
+	store := getDefaultStore()
+	err = writeFile(store, buf)
 	if err != nil {
 		log.Fatal(err)
 	}
-	log.Print(cap(files))
-	log.Print("I am 2")
+}
+
+func getDefaultStore() pdfstore.PdfStore {
+	config := &pdfstore.FileStoreConfig{
+		Path:              "/store",
+		Permissions:       0666,
+		FileNameGenerator: pdfstore.DefaultFileNameGenerator(),
+	}
+
+	fs, err := pdfstore.NewFileStore(config)
+	if err != nil {
+		log.Fatalln(fmt.Errorf("unable to create default file store: %v", err))
+	}
+
+	return fs
+}
+
+func writeFile(store pdfstore.PdfStore, bytes []byte) error {
+	_, err := store.Write(bytes)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func navigate(urlstr, sel string, res *[]byte) chromedp.Tasks {
