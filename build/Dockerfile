@@ -10,12 +10,11 @@ RUN apk update && apk upgrade && \
       freetype@edge \
       harfbuzz@edge \
       ttf-freefont@edge \
-      dumb-init
+      dumb-init # hepls to fight chrome zombie processes
 
 WORKDIR /app
-ADD main /app
+ADD bin/main /app
 RUN mkdir /store
 
 ENTRYPOINT ["dumb-init", "--"]
-#CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main .
 CMD ["./main"]
