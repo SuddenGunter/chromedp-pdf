@@ -3,14 +3,27 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/SuddenGunter/pandaren/pkg/pdfstore"
+	"os"
+
+	"github.com/SuddenGunter/pandaren/pkg/pdf"
+	"github.com/caarlos0/env"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"log"
+	"github.com/pkg/errors"
 )
 
+type config struct {
+	PdfStorePath string `env:"PANDAREN_PDF_PATH,required"`
+}
+
 func main() {
-	log.Print("I am 1")
+
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
+
 	// create context
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
@@ -19,32 +32,40 @@ func main() {
 	var buf []byte
 	err := chromedp.Run(ctx, navigate(`https://www.google.com/`, `#main`, &buf))
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
 	}
 
-	store := getDefaultStore()
+	chromedp.NewContext(context.Background(), &chromedp.ContextOption{})
+
+	store, err := getDefaultStore(cfg)
+	if err != nil {
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
+	}
+
 	err = writeFile(store, buf)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Printf("%+v\n", err)
+		os.Exit(1)
 	}
 }
 
-func getDefaultStore() pdfstore.PdfStore {
-	config := &pdfstore.FileStoreConfig{
-		Path:              "/store",
-		Permissions:       0666,
-		FileNameGenerator: pdfstore.DefaultFileNameGenerator(),
+func getDefaultStore(cfg config) (pdf.Store, error) {
+	config := &pdf.FileSystemStoreConfig{
+		Path:        cfg.PdfStorePath,
+		Permissions: 0666,
 	}
 
-	fs, err := pdfstore.NewFileStore(config)
+	fs, err := pdf.NewFileSystemStore(config)
 	if err != nil {
-		log.Fatalln(fmt.Errorf("unable to create default file store: %v", err))
+		return nil, errors.Wrap(err, "unable to create default file store")
 	}
 
-	return fs
+	return fs, nil
 }
 
-func writeFile(store pdfstore.PdfStore, bytes []byte) error {
+func writeFile(store pdf.Store, bytes []byte) error {
 	_, err := store.Write(bytes)
 	if err != nil {
 		return err
@@ -57,11 +78,11 @@ func navigate(urlstr, sel string, res *[]byte) chromedp.Tasks {
 	return chromedp.Tasks{
 		chromedp.Navigate(urlstr),
 		chromedp.WaitVisible(sel, chromedp.ByID),
-		pdf(res),
+		makePdf(res),
 	}
 }
 
-func pdf(pdfbuf *[]byte) chromedp.Action {
+func makePdf(pdfbuf *[]byte) chromedp.Action {
 	if pdfbuf == nil {
 		panic("pdfbuf cannot be nil")
 	}
