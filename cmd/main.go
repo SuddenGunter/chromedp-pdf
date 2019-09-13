@@ -2,23 +2,36 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"log"
+	"net/url"
 
 	"github.com/SuddenGunter/pandaren/pkg/pdfstore"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
 )
 
+type config struct {
+	HtmlRoute string
+}
+
 func main() {
-	log.Print("I am 1")
+	htmlRoute := flag.Arg(0)
+	_, err := url.Parse(htmlRoute)
+	if err != nil {
+		log.Fatalln("Failed to parse html URL")
+	}
+
+	log.Printf("PDF generator running for &v/n", htmlRoute)
+
 	// create context
 	ctx, cancel := chromedp.NewContext(context.Background())
 	defer cancel()
 
 	// run task list
 	var buf []byte
-	err := chromedp.Run(ctx, navigate(`https://www.google.com/`, `#main`, &buf))
+	err := chromedp.Run(ctx, navigate(htmlRoute, `#main`, &buf))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,9 +45,7 @@ func main() {
 
 func getDefaultStore() pdfstore.PdfStore {
 	config := &pdfstore.FileStoreConfig{
-		Path:        "/store",
-		Permissions: 0666,
-		GetFileName: pdfstore.DefaultFileNameGenerator(),
+		Path: "/store",
 	}
 
 	fs, err := pdfstore.NewFileStore(config)

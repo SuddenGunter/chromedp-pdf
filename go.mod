@@ -1,6 +1,6 @@
 module github.com/SuddenGunter/pandaren
 
-go 1.12
+go 1.13
 
 require (
 	github.com/chromedp/cdproto v0.0.0-20190429085128-1aa4f57ff2a9
