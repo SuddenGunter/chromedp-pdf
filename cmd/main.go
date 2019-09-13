@@ -31,7 +31,7 @@ func main() {
 
 	// run task list
 	var buf []byte
-	err := chromedp.Run(ctx, navigate(htmlRoute, `#main`, &buf))
+	err = chromedp.Run(ctx, navigate(htmlRoute, `#main`, &buf))
 	if err != nil {
 		log.Fatal(err)
 	}
