@@ -3,10 +3,11 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+
 	"github.com/SuddenGunter/pandaren/pkg/pdfstore"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"log"
 )
 
 func main() {
@@ -31,9 +32,9 @@ func main() {
 
 func getDefaultStore() pdfstore.PdfStore {
 	config := &pdfstore.FileStoreConfig{
-		Path:              "/store",
-		Permissions:       0666,
-		FileNameGenerator: pdfstore.DefaultFileNameGenerator(),
+		Path:        "/store",
+		Permissions: 0666,
+		GetFileName: pdfstore.DefaultFileNameGenerator(),
 	}
 
 	fs, err := pdfstore.NewFileStore(config)

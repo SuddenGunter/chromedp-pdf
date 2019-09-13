@@ -2,54 +2,56 @@ package pdfstore
 
 import (
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"os"
+	"path"
+	"time"
 )
 
 type FileStoreConfig struct {
-	Path              string
-	Permissions       os.FileMode
-	FileNameGenerator func() string
+	// Path is OS-specific path where to store generated PDF files, e.g. /home/user/pdf
+	Path string
+	// GetFileName is a function that returns filename for PDF. Optional, for default value see GetDefaultFileNameGenerator
+	GetFileName func() string
 }
 
 type FileStore struct {
 	config FileStoreConfig
 }
 
-func NewFileStore(config *FileStoreConfig) (*FileStore, error) {
+func NewFileStore(config *FileStoreConfig) (FileStore, error) {
 	if err := validateConfig(config); err != nil {
-		return nil, err
+		return FileStore{}, err
 	}
-
-	return &FileStore{config: *config}, nil
+	return FileStore{config: *config}, nil
 }
 
 func validateConfig(config *FileStoreConfig) error {
 	if len(config.Path) <= 0 {
 		return ErrEmptyPath
 	}
-	if config.FileNameGenerator == nil {
-		return ErrNilFileNameGenerator
+	if config.GetFileName == nil {
+		config.GetFileName = GetDefaultFileNameGenerator()
 	}
 
 	return nil
 }
 
 func (fs FileStore) Write(buffer []byte) (n int, err error) {
-	if err = ioutil.WriteFile(fs.config.Path+fs.config.FileNameGenerator(), buffer, fs.config.Permissions); err != nil {
+	filePath := path.Join(fs.config.Path, fs.config.GetFileName())
+	if err = ioutil.WriteFile(filePath, buffer, os.ModePerm); err != nil {
 		return 0, err
 	}
 	return len(buffer), nil
 }
 
-// DefaultFileNameGenerator provides function that generates file names in next format
-// dd-mm-yyyy-hh-mm-{base64 string of 6 chars}.pdf
-func DefaultFileNameGenerator() func() string {
+// GetDefaultFileNameGenerator provides function that generates file names in next format
+// {time.Now().UTC().UnixNano()}.pdf
+func GetDefaultFileNameGenerator() func() string {
 	return func() string {
-		//todo
-		return "NOT_IMPLEMENTED.pdf"
+		return fmt.Sprintf("&v.pdf", time.Now().UTC().UnixNano())
 	}
 }
 
 var ErrEmptyPath = errors.New("FileStoreConfig.Path must be not empty")
-var ErrNilFileNameGenerator = errors.New("FileStoreConfig.FileNameGenerator must be non-nil value")
