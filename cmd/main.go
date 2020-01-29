@@ -3,13 +3,21 @@ package main
 import (
 	"context"
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/SuddenGunter/pandaren/pkg/pdfstore"
 	"github.com/chromedp/cdproto/page"
 	"github.com/chromedp/chromedp"
-	"log"
 )
 
 func main() {
+	done := make(chan os.Signal, 1)
+	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+	RunServer(done)
+
 	log.Print("I am 1")
 	// create context
 	ctx, cancel := chromedp.NewContext(context.Background())
