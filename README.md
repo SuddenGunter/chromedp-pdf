@@ -1,4 +1,4 @@
-# pandaren
+# chromedp-pdf
 small tool for html -> pdf convertion using go and chromedp
 
 current v0.1.5 is dumb cli tool that can be runned in docker.
